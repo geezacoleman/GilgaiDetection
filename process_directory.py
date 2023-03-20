@@ -47,3 +47,6 @@ def process_directory(image_directory, json_file_path="parameters.json", output_
 
         for result in results:
             csv_writer.writerow(result)
+
+if __name__ == "__main__":
+    process_directory(image_directory="images")
