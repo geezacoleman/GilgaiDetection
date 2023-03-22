@@ -2,3 +2,4 @@ streamlit
 numpy
 opencv-python-headless
 pandas
+imutils

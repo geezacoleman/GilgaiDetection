@@ -3,6 +3,7 @@ from datetime import datetime
 import streamlit as st
 import pandas as pd
 import numpy as np
+import imutils
 import cv2
 
 
@@ -20,19 +21,27 @@ def thresholding(image, lower, upper, color_space):
 
     return result, coverage
 
+
 def apply_mask(image, lower, upper, color, color_space, alpha=0.5):
     if color_space == "HSV":
-        converted_image = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
+        converted_image = cv2.cvtColor(image.copy(), cv2.COLOR_BGR2HSV)
     elif color_space == "LAB":
-        converted_image = cv2.cvtColor(image, cv2.COLOR_BGR2Lab)
+        converted_image = cv2.cvtColor(image.copy(), cv2.COLOR_BGR2Lab)
     else:
-        converted_image = image
+        converted_image = image.copy()
 
     mask = cv2.inRange(converted_image, lower, upper)
     colored_mask = np.zeros_like(image)
     colored_mask[mask > 0] = color
-    return cv2.addWeighted(image, 1 - alpha, colored_mask, alpha, 0), mask
 
+    # Create a mask of the inverse of the original mask
+    inverse_mask = cv2.bitwise_not(mask)
+
+    # Merge the colored mask with the original image only in the masked areas
+    masked_image = cv2.bitwise_and(image, image, mask=inverse_mask)
+    masked_image = cv2.add(masked_image, colored_mask)
+
+    return cv2.addWeighted(masked_image, 1 - alpha, image, alpha, 0), mask
 
 def app():
     st.set_page_config(layout="wide", page_title="Coverage Mapper")
@@ -49,20 +58,23 @@ def app():
 
     col1, col2 = st.columns([2, 1])
     image_placeholder = col1.empty()
+    placeholder = np.ones((600, 600), dtype=np.uint8) * 255
+    image_placeholder.image(placeholder)
 
     uploaded_files = st.sidebar.file_uploader("Upload an image", type=["png", "jpg", "jpeg"], accept_multiple_files=True)
     color_space = col2.selectbox("Choose color space", options=["RGB", "HSV", "LAB"])
 
     thresholds = {}
     for i in range(2):
-        col2.write(f"### Class {i + 1} {color_space} Thresholds")
+        # col2.write(f"### Class {i + 1} {color_space} Thresholds")
         lower = []
         upper = []
+        expander = col2.expander(f"Class {i + 1} {color_space} Thresholds")
         for ch in color_space:
             min_value = 0
             max_value = 180 if ch == 'H' and color_space == 'HSV' else 255
             range_values = list(range(min_value, max_value + 1))
-            selected_range = col2.select_slider(
+            selected_range = expander.select_slider(
                 f"{ch} | (Class {i + 1})", options=range_values, value=(min_value, max_value)
             )
             lower.append(selected_range[0])
@@ -112,12 +124,13 @@ def app():
         uploaded_file.seek(0)
         file_bytes = np.asarray(bytearray(uploaded_file.read()), dtype=np.uint8)
         image = cv2.imdecode(file_bytes, 1)
+        image = imutils.resize(image.copy(), height=600)
 
         overlay_image = image.copy()
-        colors = [(255, 0, 0), (0, 0, 255)]  # Red and blue colors for the masks
+        colors = [(200, 43, 104), (0, 0, 255)]  # Red and blue colors for the masks
         for i in range(2):
             masked_image, mask = apply_mask(overlay_image, thresholds[f"class_{i + 1}"]["lower"],
-                                            thresholds[f"class_{i + 1}"]["upper"], colors[i], color_space, alpha=0.5)
+                                            thresholds[f"class_{i + 1}"]["upper"], colors[i], color_space, alpha=0.1)
             show_overlay = col1_columns[i].checkbox(f"Class {i + 1} Overlay", value=False, key=f"overlay_class_{i + 1}")
             if show_overlay:
                 overlay_image = masked_image
@@ -128,7 +141,7 @@ def app():
             col1_columns[i].progress(int(coverage))
 
         display_image = cv2.cvtColor(overlay_image.copy(), cv2.COLOR_BGR2RGB)
-        image_placeholder.image(display_image, caption="Output", width=800)
+        image_placeholder.image(display_image)
 
         if col1_columns[0].button("Back"):
             if current_image_idx > 0:
