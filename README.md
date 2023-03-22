@@ -1,10 +1,15 @@
-# Calculating percentage Gilgais in a Paddock
-Using this thread on Twitter for inspiration, the repository was made to allow a user to threshold images and 
-determine the area of an image that is from gilgais or a 'wheat' or other crop. Using ChatGPT, a GUI is now a
-fairly user-friendly way of operating it.
+# The Coverage Calculator
+Now available as a web-app on StreamLit!
+
+[![Streamlit App](https://static.streamlit.io/badges/streamlit_badge_black_white.svg)](https://geezacoleman-gilgaidetection-streamlit-app-wn203j.streamlit.app/)
+
+The CoverageCalculator allows you to upload images and perform two-class, colour-based segmentation. Using [this thread on Twitter](https://twitter.com/cropmad/status/1637700842727022593) for inspiration, the app was made to allow a user to threshold images and 
+determine the area of an image that comes from each of the two classes. It was built in a few hours with a lot of help from ChatGPT.
+
+![image](https://user-images.githubusercontent.com/51358498/226951394-16d4bf7e-e0ce-4946-aad3-2b69730098d1.png)
 
 ## A Tkinter-based user interface
-Clone this repository, install the requirements (numpy and OpenCV) and then run `python gui.py` 
+To use the tkinter GUI, clone this repository, install the requirements (numpy and OpenCV) and then run `python gui.py` 
 on your command line. It should bring up a window like the one below. There are default colour settings included
 in the `parameters.json` file, but if you want to change those, you'll need to run `gilgai_detection.py` separately.
 
