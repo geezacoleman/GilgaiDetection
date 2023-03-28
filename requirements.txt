@@ -1,5 +1,6 @@
+streamlit-image-coordinates
+opencv-python-headless
 streamlit
 numpy
-opencv-python-headless
 pandas
 imutils
